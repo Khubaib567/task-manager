@@ -1,0 +1,54 @@
+MERN Stack Developer Test
+Objective:
+To assess your ability to build and integrate a full-stack application using the MERN (MongoDB, Express.js, React.js, Node.js) stack.
+
+Submission Format:
+Live link (deployed on platforms like Render, Vercel, or Cyclic for backend, Netlify for frontend)
+
+GitHub repository link with complete source code
+
+README file with setup instructions and any additional notes
+
+Project Task: Build a Simple Task Management App
+Requirements:
+Frontend (React.js):
+Build a responsive interface for the following:
+
+User Registration & Login (with JWT)
+
+Dashboard to view all tasks
+
+Add new task (title, description, due date, status)
+
+Edit & delete task
+
+Use React Router for navigation
+
+Use Axios or Fetch for API requests
+
+Backend (Node.js + Express.js):
+Create RESTful APIs for:
+
+User registration and login with JWT authentication
+
+CRUD operations for tasks (Create, Read, Update, Delete)
+
+Protect routes using middleware
+
+Handle validation and errors
+
+Database (MongoDB + Mongoose):
+Use MongoDB to store:
+
+User details (with hashed password)
+
+Task details (with reference to user ID)
+
+Bonus (Optional but Appreciated):
+Implement search or filter functionality for tasks
+
+Add pagination to task list
+
+Use Context API or Redux for state management
+
+Add a due date reminder (basic notification)
