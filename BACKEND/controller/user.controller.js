@@ -153,7 +153,7 @@ exports.deleteAll = async (req, res) => {
 // FIND ALL PUBLISHED USERS
 exports.findAllUpdated = async (req, res) => {
   
-  const data = await User.findAll({ where: { updated: true } });
+  const data = await User.findAll({ where: { status: true } });
 
   try {
     
