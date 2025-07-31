@@ -1,30 +1,33 @@
-const mongoose = require('mongoose');
-
-const taskSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    required: true
-  },
-  due_date: {
-    type: String, // Or change to Date if needed
-    required: true
-  },
-  status: {
-    type: Boolean,
-    default: false
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true // Make it required if every task must belong to a user
-  }
-}, {
-  timestamps: true // Adds createdAt and updatedAt automatically
-});
-
-const Task = mongoose.model('Task', taskSchema);
-module.exports = Task;
+module.exports = (sequelize, DataTypes) => {
+  const Task = sequelize.define("task", {
+      title: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      description: {
+      type: DataTypes.STRING,
+      allowNull: false
+      },
+      created_by: {
+      type: DataTypes.STRING,
+      allowNull: false
+      },
+      status: {
+        type: DataTypes.BOOLEAN,
+      },
+      createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: new Date(),
+      
+      },
+     updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: new Date(),
+    }
+  })
+    
+    return Task;
+  };
+  
+  
+   

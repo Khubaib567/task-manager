@@ -1,87 +1,65 @@
-const db = require("../database/");
-const User = require('../models/user.model'); // adjust path as needed
-
+const db = require("../config/db.config");
 const {generateToken,removeToken} = require('../utils/json.token');
 const User = db.users;
-
+const Task = db.tasks;
 
 // CREATE AND SAVE A NEW USER
 exports.create = async (req, res) => {
-
-  // Use destructuring to access fields
-  const { name, password, email, role, tasks } = req.body;
-
+  // USE OBJECT DESTRUCTION FOR EASILY ACCESS REQ BODY PARAMETER.
+  const {name , password , email , role , status } = req.body;
+  
   try {
-    // Basic validation
-    if (!name || !password || !email) {
-      return res.status(400).json({ message: "Name, email and password are required." });
+    if (!req.body) {
+      res.status(400).send({ message: "Content can not be empty!" });
+      return;
     }
-
-    // Construct user object
-    const userObj = {
-      name,
-      password, // Password will be hashed automatically in schema (if implemented)
-      email,
-      role: role  ?  role : "STUDENT",
-      tasks: Array.isArray(tasks) ? tasks : [] // ensure it's an array of task IDs
+    
+    // CREATE A USER OBJECT
+    const obj = {
+      name: name,
+      password: password,
+      email: email,
+      role : role ? role : "STUDENT" ,
+      status : status ? status : false
     };
 
-    // Create user
-    const createdUser = await User.create(userObj);
 
-    if (!createdUser) {
-      return res.status(500).json({ message: "User creation failed." });
+    // SAVE USER IN THE DATABASE
+    const data = await User.create(obj);
+
+    // FETCH THE NEWLY CREATED USER USING FINDONE
+    const user = await User.findOne({ where: { id: data.id } });
+    
+    if (!user || Array.isArray(user) && user.length === 0) {
+       return res.status(404).json({ message: "User not found after creation" });
     }
 
-    // Generate token
-    const token = await generateToken(res, createdUser._id);
-
-    // Update user with token
-    createdUser.token = token;
-    const result = await createdUser.save();
-
-    res.status(201).json({ result });
+    // GENERATE TOKEN 
+    const token = await generateToken(res, user.id);
+    // UPDATE THE USER WITH INSERT THE TOKEN
+    const result = await user.update({ token });
+    res.send({ result });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({
+    res.status(500).send({
       message: err.message || "Some error occurred while creating the User."
     });
   }
 };
 
-
 // RETRIEVE ALL USERS FROM THE DATABASE.
 exports.findAll = async (req, res) => {
-  // Extract pagination parameters from query string with defaults
-  const page = parseInt(req.query.page) || 1;       // Current page (default: 1)
-  const limit = parseInt(req.query.limit) || 10;    // Items per page (default: 10)
-  const skip = (page - 1) * limit;
-
   try {
-    // Fetch total user count for metadata
-    const totalUsers = await User.countDocuments();
+    const data = await User.findAll({ include: Task });
+    console.log(data)
+    
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+     return res.status(404).json({ message: 'No data found' });
+     }
 
-    // Paginated user data
-    const data = await User.find()
-      .populate('tasks')
-      .skip(skip)
-      .limit(limit);
+    res.status(200).send(data)
 
-    if (!data || data.length === 0) {
-      return res.status(404).json({ message: 'No data found' });
-    }
-
-    res.status(200).json({
-      users: data,
-      pagination: {
-        totalItems: totalUsers,
-        currentPage: page,
-        totalPages: Math.ceil(totalUsers / limit),
-        limit: limit
-      }
-    });
   } catch (err) {
-    res.status(500).json({
+    res.status(500).send({
       message: err.message || "Some error occurred while retrieving Users."
     });
   }
@@ -92,19 +70,20 @@ exports.findAll = async (req, res) => {
 exports.findOne = async (req, res) => {
   
   const id = req.params.id;
-
+  
   try {
-    // Find user by _id and populate tasks
-    const data = await User.findById(id).populate('tasks');
 
-    if (!data) {
+    const data = await User.findByPk(id, { include: Task });
+    
+    if (!data || Array.isArray(data) && data.length === 0) {
       return res.status(404).json({ message: 'No data found' });
     }
 
-    res.status(200).json(data);
+    res.status(200).send(data)
+
   } catch (err) {
-    res.status(500).json({
-      message: `Error retrieving User with id=${id}`
+    res.status(500).send({
+      message: "Error retrieving User with id=" + id
     });
   }
 };
@@ -115,62 +94,78 @@ exports.update = async (req, res) => {
   const id = req.params.id;
 
   try {
-    const result = await User.updateOne({ _id: id }, req.body);
-
-    // Check if any document was modified
-    if (result.modifiedCount === 0) {
-      return res.status(400).json({ message: "Requested content can't be task" });
+    
+    const result = await User.update(req.body, { where: { id: id } });
+    
+    // IF NO ROWS ARE UPDDATED.
+    if (result[0] === 0) {
+      return res.status(400).json({ message: "Requested content can't be updated" });
     }
-
-    res.status(200).json({ message: "User was task successfully!" });
+    
+    res.status(200).send({ message: "User was updated successfully!" });
+    
   } catch (err) {
-    res.status(500).json({
+    res.status(500).send({
       message: "Error updating user with id=" + id
     });
   }
   
 };
-
-
 // DELETE A USER WITH THE SPECIFIED ID IN THE REQUEST
 exports.delete = async (req, res) => {
 
- const id = req.params.id;
+  const id = req.params.id;
 
   try {
-    const deletedUser = await User.findByIdAndDelete(id);
+    await User.destroy({ where: { id: id } });
 
-    if (!deletedUser) {
-      return res.status(404).json({ message: `User not found with id=${id}` });
+    await removeToken(req, res);
+
+    res.status(200).send({ message: "User was deleted successfully!" });
     }
-
-    await removeToken(req, res); // Custom logout/token clear logic
-
-    res.status(200).json({ message: "User was deleted successfully!" });
-  } catch (err) {
-    res.status(500).json({
+  catch (err) {
+    
+    res.status(500).send({
       message: "Could not delete user with id=" + id
+    
     });
   }
  
 };
-
-
 // DELETE ALL USERS FROM THE DATABASE.
 exports.deleteAll = async (req, res) => {
-   try {
-    await User.deleteMany({}); // Deletes all documents in the collection
-
-    res.status(200).json({
-      message: "All Users have been deleted successfully!"
-    });
+  try {
+    await User.destroy({ where: {}, truncate: false });
+    
+    res.status(200).send({
+      message : "All Projects has been deleted Successfully!"
+    
+    })
   } catch (err) {
-    res.status(500).json({
+    
+    res.status(500).send({
       message: err.message || "Some error occurred while removing all Users."
+    
     });
   }
   
 };
+// FIND ALL PUBLISHED USERS
+exports.findAllUpdated = async (req, res) => {
+  
+  const data = await User.findAll({ where: { updated: true } });
 
+  try {
+    
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      return res.status(404).json({ message: 'No data found' });
+    }
 
+    res.send(data);
 
+  } catch (err) {
+    res.status(500).send({
+      message: err.message || "Some error occurred while retrieving Users."
+    });
+  }
+}

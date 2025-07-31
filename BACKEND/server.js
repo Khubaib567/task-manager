@@ -9,7 +9,6 @@ const logger = require("morgan");
 const app = express();
 const {limiter} = require("./utils/rate.limiter.js");
 const helmet = require('helmet');
-const db = require("./database")
 
 // CONFIG HELMET TO APPLY DEFAULT HEADER TO AN APP
 app.use(helmet())
@@ -32,21 +31,13 @@ app.get("/", (req, res) => {
 });
 
 // SET PORT, LISTEN FOR REQUESTS
-// require('./routes/user.routes.js')(app)
-// require('./routes/project.routes.js')(app)
+require('./routes/user.routes.js')(app)
+require('./routes/task.routes.js')(app)
 
 // CONFIG AN EXPRESS APP ON LOCALHOST IN DEVELOPMENT ENV.
 app.listen(process.env.PORT , function () {
   console.log(`Server is listening on %d in %s environment`, this.address().port, app.settings.env)
 })
-
-// CONNECT WITH MONGODB
-db().catch(console.dir);
-
-
-
-
-
 
 
 

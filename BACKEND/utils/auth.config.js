@@ -1,7 +1,8 @@
 // MIDDLEWARES FOR PROTECTING ROUTES
 const jwt = require('jsonwebtoken');
-const db = require("../database");
+const db = require("../config/db.config");
 const User = db.users;
+const Task = db.tasks;
 require('dotenv').config()
 
 const auth = () =>  {
@@ -33,10 +34,10 @@ const authRole =  () => {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
     // console.log(decoded)  
     const userId = decoded.id 
-    console.log(userId)
+    // console.log(typeof(userId))
     // console.log(userId)
-    const user = await User.findByPk(userId, { include: ["projects"] });
-    // console.log(user.role)
+    const user = await User.findByPk(userId, { include: Task });
+    // console.log(user)
     // CHECK THE USER ROLE
     if (!user || user.role !== process.env.ADMIN) return res.status(401).send({ message : 'Not allowed!' }) 
     next()

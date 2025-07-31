@@ -1,4 +1,4 @@
-const projects = require("../controller/project.controller.js");
+const projects = require("../controller/task.controller.js");
 let router = require("express").Router();
 
 // APPLY AUTHENTICATION AS MIDDLEWARE
