@@ -48,21 +48,37 @@ exports.create = async (req, res) => {
 
 // RETRIEVE ALL USERS FROM THE DATABASE.
 exports.findAll = async (req, res) => {
-  try {
-    const data = await User.findAll({ include: Task });
-    console.log(data)
-    
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-     return res.status(404).json({ message: 'No data found' });
-     }
+ try {
+  // Extract page and limit from query parameters (with defaults)
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
-    res.status(200).send(data)
+  // Fetch paginated data with related Task entries
+  const data = await User.findAll({
+    include: Task,
+    limit: limit,
+    offset: offset
+  });
 
-  } catch (err) {
-    res.status(500).send({
-      message: err.message || "Some error occurred while retrieving Users."
-    });
+  // Check if data is empty
+  if (!data || data.length === 0) {
+    return res.status(404).json({ message: 'No data found' });
   }
+
+  // Send paginated response
+  res.status(200).json({
+    page,
+    limit,
+    data
+  });
+
+} catch (err) {
+  res.status(500).json({
+    message: err.message || "Some error occurred while retrieving Users."
+  });
+}
+
   
 };
 

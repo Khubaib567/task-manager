@@ -2,7 +2,6 @@
 const jwt = require('jsonwebtoken');
 const db = require("../config/db.config");
 const User = db.users;
-const Task = db.tasks;
 require('dotenv').config()
 
 const auth = () =>  {
@@ -36,7 +35,7 @@ const authRole =  () => {
     const userId = decoded.id 
     // console.log(typeof(userId))
     // console.log(userId)
-    const user = await User.findByPk(userId, { include: Task });
+    const user = await User.findByPk(userId);
     // console.log(user)
     // CHECK THE USER ROLE
     if (!user || user.role !== process.env.ADMIN) return res.status(401).send({ message : 'Not allowed!' }) 

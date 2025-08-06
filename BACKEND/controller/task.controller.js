@@ -52,23 +52,41 @@ exports.create = async (req, res) => {
 // RETRIEVE ALL PROJECTS FROM THE DATABASE.
 exports.findAll = async (req, res) => {
   try {
-    const task_title = req.query.title;
-    
-    const condition = task_title ? { task_title: { [Op.like]: `%${task_title}%` } } : null;
+  const task_title = req.query.title;
 
-    const data = await Task.findAll({ where: condition });
+  // Pagination params
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-     return res.status(404).json({ message: 'No data found' });
-     }
+  // Search condition for title
+  const condition = task_title ? { task_title: { [Op.like]: `%${task_title}%` } } : null;
 
-    res.status(200).send(data)
+  // Fetch paginated data
+  const data = await Task.findAll({
+    where: condition,
+    limit,
+    offset
+  });
 
-  } catch (err) {
-    res.status(500).send({
-      message: err.message || "Some error occurred while retrieving Users."
-    });
+  // No data found
+  if (!data || data.length === 0) {
+    return res.status(404).json({ message: 'No data found' });
   }
+
+  // Return paginated result
+  res.status(200).json({
+    page,
+    limit,
+    data
+  });
+
+} catch (err) {
+  res.status(500).json({
+    message: err.message || "Some error occurred while retrieving tasks."
+  });
+}
+
 };
 
 // FIND A SINGLE PROJECT WITH A PROJECT_ID.
